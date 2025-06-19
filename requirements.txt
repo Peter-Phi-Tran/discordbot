@@ -1,7 +1,0 @@
-# requirements.txt
-
-requests
-pymongo
-python-dotenv
-apscheduler
-beautifulsoup4
