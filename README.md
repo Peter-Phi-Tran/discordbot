@@ -1,44 +1,48 @@
-# discordbot
+# Discord Job Scraper Bot
 
-Currently this is just keeping track of SWE/CS related job postings, and is ran locally LOL 
+A Discord bot that scrapes SWE/CS-related job postings from GitHub repositories and posts them to a designated channel. Currently run locally, with future plans for broader functionality and deployment.
 
-Future plans:
-    - Have it run on a server or someway to not need it run locally 24/7
-    - Expand to New Grad Postings
-    - Expand to other Engineering postings and even roles within Business and etc
+---
 
-Just scraping other github repos
-Ran on Windows PS but can use Venv
-When cloning add .env to config/ folder with correct values for BOT_TOKEN, MONGO_URI, and CHANNEL_ID.
+## ✨ Features
 
+- Tracks Software Engineering / CS internships and new grad roles  
+- Posts jobs to a Discord channel via bot  
+- Scrapes data from curated GitHub repositories  
+- Uses MongoDB for data persistence  
+- Dockerized for easier deployment  
 
-Build the Docker image:
-docker-compose build
+---
 
-Start the application:
-docker-compose up
+## 🧠 Future Plans
 
-If you want to run in the background (detached mode):
-docker-compose up -d
+- Host on a server or cloud platform to avoid running locally
+- Expand to include:
+  - New Grad postings
+  - Other engineering disciplines (e.g., ME, EE)
+  - Roles outside of engineering (e.g., Business, Design, Marketing)
+- Build a web dashboard to manage sources, filters, and output
 
-To stop application:
-docker-compose down
+---
 
-To view logs:
-docker-compose logs -f
+## 📁 Personal Notes
 
-If you need to rebuild after changes:
-docker-compose up --build
+### `Dockerfile`
+Defines how to build the application container:
+- Installs dependencies
+- Sets up the Python environment
+- Runs the bot
 
+### `docker-compose.yml`
+Simplifies running the application:
+- Loads environment variables from `.env`
+- Mounts code for development
+- Manages services with simple commands
 
+---
 
-## --- Personal Notes ---
+## 📝 Notes
 
-### Dockerfile:
-Defines how to build your application image.
-Installs dependencies and sets up the environment.
-
-### docker-compose.yml:
-Uses the image built by the Dockerfile.
-Adds features like environment variables from .env and file mounts for development.
-Makes it easy to start, stop, and manage your application with a single command.
+- Was ran on Windows PowerShell
+- Compatible with Python virtual environments
+- Requires `.env` setup in `config/` folder to run correctly
