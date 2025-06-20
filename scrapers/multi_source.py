@@ -17,10 +17,16 @@ class JobScraper:
                 'type': 'json',
                 'source_name': 'Summer2025-Internships-SimplifyJobs'
             },
-            'jobright_ai': {
+            'jobright_ai_software': {
                 'url': 'https://raw.githubusercontent.com/jobright-ai/2025-Software-Engineer-Internship/master/README.md',
                 'type': 'markdown_table',
-                'source_name': 'JobRight-AI',
+                'source_name': 'JobRight-AI-Software',
+                'table_format': 'jobright'
+            },
+            'jobright_ai_engineering': {
+                'url': 'https://raw.githubusercontent.com/jobright-ai/2025-Engineer-Internship/master/README.md',
+                'type': 'markdown_table',
+                'source_name': 'JobRight-AI-Engineering',
                 'table_format': 'jobright'
             }
         }
