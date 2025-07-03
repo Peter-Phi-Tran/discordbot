@@ -40,7 +40,7 @@ async def fetch_and_post_new_jobs():
     
     try:
         print("Fetching jobs from all sources...")
-        all_jobs = scraper.fetch_all_jobs(days=14)
+        all_jobs = scraper.fetch_all_jobs(days=7)
         posted_count = 0
 
         for job in all_jobs:
@@ -70,7 +70,7 @@ async def fetch_and_post_new_jobs():
                     f"Posted: {job['date_posted'].strftime('%Y-%m-%d')}\n"
                     f"Source: {job['source']}\n"
                     f"[Apply here]({job['url']})\n"
-                    "+--------------------------------------------------+"
+                    "+----------------------------------------------+"
                 )
 
                 # Send to Discord

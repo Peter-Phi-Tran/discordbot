@@ -58,7 +58,7 @@ async def fetchnewjobs(ctx):
     scraper = JobScraper()
     
     try:
-        jobs = scraper.fetch_all_jobs(days=14)
+        jobs = scraper.fetch_all_jobs(days=7)
         new_jobs = []
         for job in jobs:
             # Select appropriate collection

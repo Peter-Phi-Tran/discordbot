@@ -7,15 +7,15 @@ from bs4 import BeautifulSoup
 class JobScraper:
     def __init__(self):
         self.sources = {
-            'summer2026': {
+            'summer2026_vanshb': {
                 'url': 'https://raw.githubusercontent.com/vanshb03/Summer2026-Internships/dev/.github/scripts/listings.json',
                 'type': 'json',
                 'source_name': 'Summer2026-Internships-Vanshb'
             },
-            'summer2025': {
-                'url': 'https://raw.githubusercontent.com/SimplifyJobs/Summer2025-Internships/dev/.github/scripts/listings.json',
+            'summer2026_simplifyjobs': {
+                'url': 'https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json',
                 'type': 'json',
-                'source_name': 'Summer2025-Internships-SimplifyJobs'
+                'source_name': 'Summer2026-Internships-SimplifyJobs'
             },
             'jobright_ai_software': {
                 'url': 'https://raw.githubusercontent.com/jobright-ai/2025-Software-Engineer-Internship/master/README.md',
@@ -233,7 +233,7 @@ class JobScraper:
             "work_model": json_job.get("work_model", "")
         }
 
-    def filter_recent_jobs(self, jobs: List[Dict], days: int = 14) -> List[Dict]:
+    def filter_recent_jobs(self, jobs: List[Dict], days: int = 7) -> List[Dict]:
         """Filter jobs to only include those posted within the last N days"""
         cutoff_date = datetime.now() - timedelta(days=days)
         recent_jobs = []
@@ -249,7 +249,7 @@ class JobScraper:
 
         return recent_jobs
 
-    def fetch_all_jobs(self, days: int = 14) -> List[Dict]:
+    def fetch_all_jobs(self, days: int = 7) -> List[Dict]:
         """Fetch jobs from all configured sources"""
         all_jobs = []
 
@@ -298,11 +298,11 @@ def map_job(json_job):
     scraper = JobScraper()
     return scraper.map_job(json_job, "GitHub")
 
-def filter_recent_jobs(jobs, days=14):
+def filter_recent_jobs(jobs, days=7):
     scraper = JobScraper()
     return scraper.filter_recent_jobs(jobs, days)
 
-def fetch_and_filter_recent_jobs(url, days=14):
+def fetch_and_filter_recent_jobs(url, days=7):
     scraper = JobScraper()
     data = scraper.fetch_github_json(url)
     recent_jobs_raw = scraper.filter_recent_jobs(data, days)
