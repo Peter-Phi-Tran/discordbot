@@ -7,28 +7,68 @@ from bs4 import BeautifulSoup
 class JobScraper:
     def __init__(self):
         self.sources = {
-            'summer2026_vanshb': {
+            'summer2026_swe_vanshb_internship': { # SWE Internship positions
                 'url': 'https://raw.githubusercontent.com/vanshb03/Summer2026-Internships/dev/.github/scripts/listings.json',
                 'type': 'json',
                 'source_name': 'Summer2026-Internships-Vanshb'
             },
-            'summer2026_simplifyjobs': {
+            'summer2026_swe_simplify_internship': {
                 'url': 'https://raw.githubusercontent.com/SimplifyJobs/Summer2026-Internships/dev/.github/scripts/listings.json',
                 'type': 'json',
                 'source_name': 'Summer2026-Internships-SimplifyJobs'
             },
-            'jobright_ai_software': {
+            'jobright_ai_software_internship': {
                 'url': 'https://raw.githubusercontent.com/jobright-ai/2025-Software-Engineer-Internship/master/README.md',
                 'type': 'markdown_table',
-                'source_name': 'JobRight-AI-Software',
+                'source_name': 'JobRight-AI-Software-Internship',
                 'table_format': 'jobright'
             },
-            'jobright_ai_engineering': {
+
+
+            'jobright_ai_engineering_internship': { # PM & Engineering Internship positions
                 'url': 'https://raw.githubusercontent.com/jobright-ai/2025-Engineer-Internship/master/README.md',
                 'type': 'markdown_table',
-                'source_name': 'JobRight-AI-Engineering',
+                'source_name': 'JobRight-AI-Engineering-Internship',
                 'table_format': 'jobright'
-            }
+            },
+            'jobright_ai_product_management_internship': { 
+                'url': 'https://raw.githubusercontent.com/jobright-ai/2025-Product-Management-Internship/master/README.md',
+                'type': 'markdown_table',
+                'source_name': 'JobRight-AI-Product-Management-Internship',
+                'table_format': 'jobright'
+            },
+
+
+            'newgrad_swe_vanshb': { # SWE New Grad positions
+                'url': 'https://raw.githubusercontent.com/vanshb03/New-Grad-2025/main/README.md', 
+                'type': 'markdown_table',
+                'source_name': 'New-Grad-SWE-Vanshb',
+            },
+            'newgrad_swe_simplify': {
+                'url': 'https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json',
+                'type': 'markdown_table',
+                'source_name': 'New-Grad-SWE-SimplifyJobs',
+            },
+            'new_grad_jobright_ai_swe': {
+                'url': 'https://raw.githubusercontent.com/jobright-ai/2025-Software-Engineer-New-Grad/master/README.md',
+                'type': 'markdown_table',
+                'source_name': 'JobRight-AI-Software-New-Grad',
+                'table_format': 'jobright'
+            },
+
+
+            'newgrad_pm_jobright': { # PM & Engineering New Grad positions
+                'url': 'https://raw.githubusercontent.com/jobright-ai/2025-Product-Management-Internship/master/README.md',
+                'type': 'markdown_table',
+                'source_name': 'JobRight-AI-Product-Management-New-Grad',
+                'table_format': 'jobright'
+            },
+            'newgrad_eng_jobright': {
+                'url': 'https://raw.githubusercontent.com/jobright-ai/2025-Engineering-New-Grad/master/README.md',
+                'type': 'markdown_table',
+                'source_name': 'JobRight-AI-Engineering-New-Grad',
+                'table_format': 'jobright'
+            },
         }
 
     def fetch_github_json(self, url: str) -> List[Dict]:
@@ -42,11 +82,17 @@ class JobScraper:
         response = requests.get(url)
         response.raise_for_status()
         return response.text
+    
+    def _strip_html(self, text: str) -> str:
+        """Remove any HTML tags before further processing."""
+        return BeautifulSoup(text, "html.parser").get_text(separator=", ")
 
     def _clean_position_text(self, text: str) -> str:
         """Remove markdown formatting and extra spaces from text."""
+        text = self._strip_html(text)
         if not text:
             return ""
+        # 2. Remove markdown links, emphasis, etc.
         cleaned = re.sub(r'\[([^\]]+)\]\([^)]+\)', r'\1', text)
         cleaned = re.sub(r'[*_`#]', '', cleaned)
         return cleaned.strip()
@@ -111,7 +157,7 @@ class JobScraper:
                 continue
 
         # If all else fails, assume it's recent (within last week)
-        return datetime.now() - timedelta(days=3)
+        return datetime.now() - timedelta(days=7)
 
     def parse_markdown_table(self, markdown_content: str, table_format: str = 'default') -> List[Dict]:
         jobs = []
@@ -173,6 +219,9 @@ class JobScraper:
                                     'date_posted': int(date_obj.timestamp()),
                                     'work_model': work_model
                                 }
+                                if not job_entry["url"]:
+                                    continue
+
                                 jobs.append(job_entry)
                             else:
                                 print(f"WARNING: Skipping row with only {len(columns)} columns: {columns}")
@@ -219,13 +268,16 @@ class JobScraper:
         else:
             date_posted = json_job.get('date_posted', datetime.now())
 
+        role_type = ("New Grad" if "New-Grad" in source_name or 
+                     "Newgrad" in source_name else "Internship")
+
         return {
             "title": json_job.get("title", ""),
             "company": json_job.get("company_name", json_job.get("company", "")),
             "location": ", ".join(json_job.get("locations", [])) if json_job.get("locations") else json_job.get("location", ""),
             "url": json_job.get("url", ""),
             "date_posted": date_posted,
-            "role_type": "Internship",
+            "role_type": role_type,
             "majors": [],
             "description": "",
             "source": source_name,
@@ -280,13 +332,16 @@ class JobScraper:
         unique_jobs = []
 
         for job in all_jobs:
-            job_id = job['url'] if job['url'] else f"{job['company']}_{job['title']}"
-            if job_id not in seen_jobs:
-                seen_jobs.add(job_id)
+            if job["url"] not in seen_jobs:
+                seen_jobs.add(job["url"])
                 unique_jobs.append(job)
 
         unique_jobs.sort(key=lambda x: x['date_posted'])  # Oldest first
-        print(f"Total unique jobs after deduplication: {len(unique_jobs)}")
+        # CAP TO 100
+        if len(unique_jobs) > 300:
+            unique_jobs = unique_jobs[-300:]
+
+        print(f"Total unique jobs after deduplication (capped to 300): {len(unique_jobs)}")
         return unique_jobs
 
 # For backward compatibility

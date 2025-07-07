@@ -12,14 +12,16 @@ PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
 from scrapers.multi_source import JobScraper
-from data.db import get_software_jobs_collection, get_engineering_jobs_collection, ensure_indexes
+from data.db import get_software_jobs_collection, get_engineering_jobs_collection, ensure_indexes, get_newgrad_engineering_jobs_collection, get_newgrad_software_jobs_collection
 from bot.commands import setup_commands
 
 # Load environment variables
 load_dotenv(dotenv_path="config/.env")
 TOKEN = os.getenv("BOT_TOKEN")
-SOFTWARE_CHANNEL_ID = int(os.getenv("SOFTWARE_CHANNEL_ID", ""))
-ENGINEER_CHANNEL_ID = int(os.getenv("ENGINEER_CHANNEL_ID", ""))
+SOFTWARE_INTERN_CHANNEL_ID = int(os.getenv("SOFTWARE_INTERN_CHANNEL_ID", ""))
+ENGINEER_INTERN_CHANNEL_ID = int(os.getenv("ENGINEER_INTERN_CHANNEL_ID", ""))
+SOFTWARE_NEWGRAD_CHANNEL_ID = int(os.getenv("SOFTWARE_NEWGRAD_CHANNEL_ID", ""))
+ENGINEERING_NEWGRAD_CHANNEL_ID = int(os.getenv("ENGINEERING_NEWGRAD_CHANNEL_ID", ""))
 
 # Bot setup
 intents = discord.Intents.default()
@@ -29,40 +31,44 @@ scheduler = AsyncIOScheduler()
 
 async def fetch_and_post_new_jobs():
     """Fetch new jobs and post to appropriate channels"""
-    software_channel = bot.get_channel(SOFTWARE_CHANNEL_ID)
-    engineer_channel = bot.get_channel(ENGINEER_CHANNEL_ID)
-    
+    software_channel = bot.get_channel(SOFTWARE_INTERN_CHANNEL_ID)
+    engineer_channel = bot.get_channel(ENGINEER_INTERN_CHANNEL_ID)
+    newgrad_swe_channel = bot.get_channel(SOFTWARE_NEWGRAD_CHANNEL_ID)
+    newgrad_eng_channel = bot.get_channel(ENGINEERING_NEWGRAD_CHANNEL_ID)
+
     if not software_channel or not engineer_channel:
         print("Error: Could not find one or more channels")
         return
-
-    scraper = JobScraper()
     
+    posted_count = 0
+    scraper = JobScraper()
+
     try:
-        print("Fetching jobs from all sources...")
+        print("Fetching all jobs (7-day window, capped to 100)...")
         all_jobs = scraper.fetch_all_jobs(days=7)
-        posted_count = 0
 
         for job in all_jobs:
-            # Select appropriate collection based on source
-            if "JobRight-AI-Engineering" in job.get("source", ""):
-                collection = get_engineering_jobs_collection()
+            # Pick collection & channel by role_type + source
+            if job["role_type"] == "New Grad":
+                if "Engineering" in job["source"] or "Product" in job["source"]:
+                    collection = get_newgrad_engineering_jobs_collection()
+                    channel = bot.get_channel(ENGINEERING_NEWGRAD_CHANNEL_ID)
+                else:
+                    collection = get_newgrad_software_jobs_collection()
+                    channel = bot.get_channel(SOFTWARE_NEWGRAD_CHANNEL_ID)
             else:
-                collection = get_software_jobs_collection()
-                
+                if "Engineering" in job["source"] or "Product-Management" in job["source"]:
+                    collection = get_engineering_jobs_collection()
+                    channel = bot.get_channel(ENGINEER_INTERN_CHANNEL_ID)
+                else:
+                    collection = get_software_jobs_collection()
+                    channel = bot.get_channel(SOFTWARE_INTERN_CHANNEL_ID)   
+                # Format message
             exists = collection.find_one({"url": job["url"]})
             if not exists:
                 # Insert into database
                 result = collection.insert_one(job)
                 job_id = result.inserted_id
-
-                # Determine target channel based on source
-                if "JobRight-AI-Engineering" in job.get("source", ""):
-                    channel = engineer_channel
-                else:
-                    channel = software_channel
-
-                # Format message
                 msg = (
                     f"**{job['title']}**\n"
                     f"Company: **{job['company']}**\n"
@@ -73,7 +79,7 @@ async def fetch_and_post_new_jobs():
                     "+----------------------------------------------+"
                 )
 
-                # Send to Discord
+                    # Send to Discord
                 await channel.send(msg)
                 collection.update_one(
                     {"_id": job_id},
@@ -96,8 +102,10 @@ async def fetch_and_post_new_jobs():
 async def on_ready():
     """Bot startup event"""
     print(f"Logged in as {bot.user}")
-    print(f"Software Channel ID: {SOFTWARE_CHANNEL_ID}")
-    print(f"Engineer Channel ID: {ENGINEER_CHANNEL_ID}")
+    print(f"Software Channel ID: {SOFTWARE_INTERN_CHANNEL_ID}")
+    print(f"Engineer Channel ID: {ENGINEER_INTERN_CHANNEL_ID}")
+    print(f"Software New Grad Channel ID: {SOFTWARE_NEWGRAD_CHANNEL_ID}")
+    print(f"Engineer New Grad Channel ID: {ENGINEERING_NEWGRAD_CHANNEL_ID}")
     
     # Ensure MongoDB indexes
     ensure_indexes()

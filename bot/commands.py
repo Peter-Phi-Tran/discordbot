@@ -7,23 +7,30 @@ from discord.ext import commands
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, PROJECT_ROOT)
 
-from data.db import get_software_jobs_collection, get_engineering_jobs_collection
+from data.db import get_software_jobs_collection, get_engineering_jobs_collection, get_newgrad_software_jobs_collection, get_newgrad_engineering_jobs_collection
 from scrapers.multi_source import JobScraper
 
 # Define your Discord channel IDs
 ENGINEER_CHANNEL_ID = 
 SOFTWARE_CHANNEL_ID = 
+SOFTWARE_NEWGRAD_CHANNEL_ID = 
+ENGINEERING_NEWGRAD_CHANNEL_ID = 
+
 
 @commands.command(name='postalljobs')
 async def postalljobs(ctx):
     """Post all jobs from both databases (oldest first)"""
     software_collection = get_software_jobs_collection()
     engineering_collection = get_engineering_jobs_collection()
-    
+    newgrad_swe_channel = get_newgrad_software_jobs_collection()
+    newgrad_eng_channel = get_newgrad_engineering_jobs_collection()
+
     # Combine jobs from both collections
     software_jobs = list(software_collection.find({}).sort("date_posted", 1))
     engineering_jobs = list(engineering_collection.find({}).sort("date_posted", 1))
-    all_jobs = software_jobs + engineering_jobs
+    newgrad_software_jobs = list(newgrad_swe_channel.find({}).sort("date_posted", 1))
+    newgrad_engineering_jobs = list(newgrad_eng_channel.find({}).sort("date_posted", 1))
+    all_jobs = software_jobs + engineering_jobs + newgrad_software_jobs + newgrad_engineering_jobs
     all_jobs.sort(key=lambda x: x['date_posted'])  # Sort all by date
     
     if not all_jobs:
@@ -51,7 +58,7 @@ async def postalljobs(ctx):
             {"$set": {"posted_to_discord": True}}
         )
 
-@commands.command(name='fetchnewjobs')
+@commands.command(name='fetchnewjobs') # NOT PROPERLY UPDATED FOR NEW GRAD JOBS
 async def fetchnewjobs(ctx):
     """Manually fetch new jobs from all sources"""
     await ctx.send("🔍 Fetching new jobs...")
