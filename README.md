@@ -1,6 +1,6 @@
 # Discord Job Scraper Bot
 
-A Discord bot that scrapes SWE/CS-related job postings from GitHub repositories and posts them to a designated channel. Currently run locally, with future plans for broader functionality and deployment.
+A Discord bot that retrieves SWE/CS-related job postings from GitHub repositories and posts them to a designated channel. Currently run locally, with plans for broader functionality and deployment.
 
 ---
 
@@ -8,9 +8,9 @@ A Discord bot that scrapes SWE/CS-related job postings from GitHub repositories 
 
 - Tracks Software Engineering / CS internships and new grad roles  
 - Posts jobs to a Discord channel via bot  
-- Scrapes data from curated GitHub repositories  
+- Retrieves data from curated GitHub repositories  
 - Uses MongoDB for data persistence  
-- Dockerized for easier deployment  
+- Dockerized for easier deployment (kinda lol) 
 
 ---
 
@@ -18,9 +18,7 @@ A Discord bot that scrapes SWE/CS-related job postings from GitHub repositories 
 
 - Host on a server or cloud platform to avoid running locally
 - Expand to include:
-  - New Grad postings
-  - Other engineering disciplines (e.g., ME, EE)
-  - Roles outside of engineering (e.g., Business, Design, Marketing)
+    - A deeper level of retrieval of other engineering disciplines
 - Build a web dashboard to manage sources, filters, and output
 
 ---
