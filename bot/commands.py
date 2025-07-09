@@ -11,8 +11,8 @@ from data.db import get_software_jobs_collection, get_engineering_jobs_collectio
 from scrapers.multi_source import JobScraper
 
 # Define your Discord channel IDs
-ENGINEER_CHANNEL_ID = 
-SOFTWARE_CHANNEL_ID = 
+ENGINEER_INTERN_CHANNEL_ID = 
+SOFTWARE_INTERN_CHANNEL_ID = 
 SOFTWARE_NEWGRAD_CHANNEL_ID = 
 ENGINEERING_NEWGRAD_CHANNEL_ID = 
 
