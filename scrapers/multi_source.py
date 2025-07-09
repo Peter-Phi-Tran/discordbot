@@ -40,13 +40,13 @@ class JobScraper:
 
 
             'newgrad_swe_vanshb': { # SWE New Grad positions
-                'url': 'https://raw.githubusercontent.com/vanshb03/New-Grad-2025/main/README.md', 
-                'type': 'markdown_table',
+                'url': 'https://raw.githubusercontent.com/vanshb03/New-Grad-2025/dev/.github/scripts/listings.json', 
+                'type': 'json',
                 'source_name': 'New-Grad-SWE-Vanshb',
             },
             'newgrad_swe_simplify': {
                 'url': 'https://raw.githubusercontent.com/SimplifyJobs/New-Grad-Positions/dev/.github/scripts/listings.json',
-                'type': 'markdown_table',
+                'type': 'json',
                 'source_name': 'New-Grad-SWE-SimplifyJobs',
             },
             'new_grad_jobright_ai_swe': {

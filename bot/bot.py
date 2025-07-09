@@ -6,6 +6,10 @@ import discord
 from discord.ext import commands
 from dotenv import load_dotenv
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
+from bot.embed_utils import create_job_embed, create_error_embed, create_success_embed
+from datetime import datetime
+
+
 
 # Add project root to Python path
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -30,7 +34,7 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 scheduler = AsyncIOScheduler()
 
 async def fetch_and_post_new_jobs():
-    """Fetch new jobs and post to appropriate channels"""
+    """Fetch new jobs and post to appropriate channels using embeds"""
     software_channel = bot.get_channel(SOFTWARE_INTERN_CHANNEL_ID)
     engineer_channel = bot.get_channel(ENGINEER_INTERN_CHANNEL_ID)
     newgrad_swe_channel = bot.get_channel(SOFTWARE_NEWGRAD_CHANNEL_ID)
@@ -39,14 +43,25 @@ async def fetch_and_post_new_jobs():
     if not software_channel or not engineer_channel:
         print("Error: Could not find one or more channels")
         return
-    
+
     posted_count = 0
     scraper = JobScraper()
-
+    
     try:
         print("Fetching all jobs (7-day window, capped to 100)...")
         all_jobs = scraper.fetch_all_jobs(days=7)
-
+        
+        # Send a summary to the first channel if jobs are found
+        if all_jobs:
+            summary_embed = discord.Embed(
+                title="🔄 Automated Job Update",
+                description=f"Found {len(all_jobs)} jobs to process",
+                color=0x3498db,
+                timestamp=datetime.now()
+            )
+            summary_embed.set_footer(text="Jobs will be posted to appropriate channels")
+            await software_channel.send(embed=summary_embed)
+        
         for job in all_jobs:
             # Pick collection & channel by role_type + source
             if job["role_type"] == "New Grad":
@@ -62,25 +77,20 @@ async def fetch_and_post_new_jobs():
                     channel = bot.get_channel(ENGINEER_INTERN_CHANNEL_ID)
                 else:
                     collection = get_software_jobs_collection()
-                    channel = bot.get_channel(SOFTWARE_INTERN_CHANNEL_ID)   
-                # Format message
+                    channel = bot.get_channel(SOFTWARE_INTERN_CHANNEL_ID)
+
+            # Check if job already exists
             exists = collection.find_one({"url": job["url"]})
             if not exists:
                 # Insert into database
                 result = collection.insert_one(job)
                 job_id = result.inserted_id
-                msg = (
-                    f"**{job['title']}**\n"
-                    f"Company: **{job['company']}**\n"
-                    f"Location: {job['location']}\n"
-                    f"Posted: {job['date_posted'].strftime('%Y-%m-%d')}\n"
-                    f"Source: {job['source']}\n"
-                    f"[Apply here]({job['url']})\n"
-                    "+----------------------------------------------+"
-                )
 
-                    # Send to Discord
-                await channel.send(msg)
+                # Create and send job embed
+                job_embed = create_job_embed(job)
+                await channel.send(embed=job_embed)
+
+                # Update posted status
                 collection.update_one(
                     {"_id": job_id},
                     {"$set": {"posted_to_discord": True}}
@@ -88,15 +98,25 @@ async def fetch_and_post_new_jobs():
                 posted_count += 1
 
         if posted_count > 0:
-            print(f"✅ Posted {posted_count} new job(s)")
+            print(f"✅ Posted {posted_count} new job(s) with embeds")
         else:
             print("No new jobs to post")
-            
+
     except Exception as e:
         error_msg = f"ERROR fetching jobs: {str(e)}"
         print(error_msg)
+        
+        # Send error embed to software channel
         if software_channel:
-            await software_channel.send(error_msg)
+            error_embed = discord.Embed(
+                title="❌ Automated Job Fetch Error",
+                description=error_msg,
+                color=0xff0000,
+                timestamp=datetime.now()
+            )
+            error_embed.set_footer(text="Please check the bot logs for more details")
+            await software_channel.send(embed=error_embed)
+
 
 @bot.event
 async def on_ready():
@@ -117,7 +137,7 @@ async def on_ready():
     scheduler.add_job(
         fetch_and_post_new_jobs,
         'interval',
-        hours=1,
+        hours=0.5,
         id='job_fetcher'
     )
     scheduler.start()
