@@ -4,7 +4,7 @@ A Discord bot that retrieves SWE/CS-related job postings from GitHub repositorie
 
 ---
 
-## ✨ Features
+## Features
 
 - Tracks Software Engineering / CS internships and new grad roles  
 - Posts jobs to a Discord channel via bot  
@@ -14,7 +14,7 @@ A Discord bot that retrieves SWE/CS-related job postings from GitHub repositorie
 
 ---
 
-## 🧠 Future Plans
+## Future Plans
 
 - Host on a server or cloud platform to avoid running locally
 - Expand to include:
@@ -23,7 +23,7 @@ A Discord bot that retrieves SWE/CS-related job postings from GitHub repositorie
 
 ---
 
-## 📁 Personal Notes
+## Personal Notes
 
 ### `Dockerfile`
 Defines how to build the application container:
@@ -39,7 +39,7 @@ Simplifies running the application:
 
 ---
 
-## 📝 Notes
+## Notes
 
 - Was ran on Windows PowerShell
 - Compatible with Python virtual environments
