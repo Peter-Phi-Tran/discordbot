@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import os
 import sys
+import time
 import asyncio
 import discord
 from discord.ext import commands
@@ -48,13 +49,16 @@ async def fetch_and_post_new_jobs():
     scraper = JobScraper()
     
     try:
-        print("Fetching all jobs (7-day window, capped to 100)...")
-        all_jobs = scraper.fetch_all_jobs(days=7)
+        print("Fetching all jobs (7-day window, capped to 300) using multithreaded scraping...")
+        start_time = time.time()
+        all_jobs = scraper.fetch_all_jobs(days=7, max_workers=5)
+        end_time = time.time()
+        print(f"⚡ Scraping completed in {end_time - start_time:.2f} seconds")
         
         # Send a summary to the first channel if jobs are found
         if all_jobs:
             summary_embed = discord.Embed(
-                title="🔄 Automated Job Update",
+                title="Automated Job Update",
                 description=f"Found {len(all_jobs)} jobs to process",
                 color=0x3498db,
                 timestamp=datetime.now()
@@ -98,7 +102,7 @@ async def fetch_and_post_new_jobs():
                 posted_count += 1
 
         if posted_count > 0:
-            print(f"✅ Posted {posted_count} new job(s) with embeds")
+            print(f"Posted {posted_count} new job(s) with embeds")
         else:
             print("No new jobs to post")
 
@@ -109,7 +113,7 @@ async def fetch_and_post_new_jobs():
         # Send error embed to software channel
         if software_channel:
             error_embed = discord.Embed(
-                title="❌ Automated Job Fetch Error",
+                title="Automated Job Fetch Error",
                 description=error_msg,
                 color=0xff0000,
                 timestamp=datetime.now()
@@ -151,7 +155,7 @@ def main():
         print("ERROR: BOT_TOKEN not found in environment variables")
         return
 
-    print("🔄 Starting Discord bot...")
+    print("Starting Discord bot...")
     try:
         bot.run(TOKEN)
     except discord.LoginFailure:

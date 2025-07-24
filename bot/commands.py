@@ -1,6 +1,7 @@
 import os
 import sys
 import asyncio
+import discord
 from discord.ext import commands
 
 # Ensure absolute imports work
@@ -11,8 +12,8 @@ from data.db import get_software_jobs_collection, get_engineering_jobs_collectio
 from scrapers.multi_source import JobScraper
 
 # Define your Discord channel IDs
-ENGINEER_INTERN_CHANNEL_ID = 
-SOFTWARE_INTERN_CHANNEL_ID = 
+ENGINEER_CHANNEL_ID = 
+SOFTWARE_CHANNEL_ID = 
 SOFTWARE_NEWGRAD_CHANNEL_ID = 
 ENGINEERING_NEWGRAD_CHANNEL_ID = 
 
@@ -36,7 +37,7 @@ async def postalljobs(ctx):
     if not all_jobs:
         # Create an embed for "no jobs found"
         embed = discord.Embed(
-            title="📭 No Jobs Found",
+            title="No Jobs Found",
             description="There are currently no job postings available.",
             color=0xff6b6b
         )
@@ -46,13 +47,13 @@ async def postalljobs(ctx):
 
     # Send summary embed first
     summary_embed = discord.Embed(
-        title="📋 Job Posting Summary",
+        title="Job Posting Summary",
         description=f"Posting **{len(all_jobs)}** jobs (oldest first)",
         color=0x00d2d3,
         timestamp=datetime.now()
     )
     summary_embed.add_field(
-        name="📊 Breakdown",
+        name="Breakdown",
         value=f"Software: {len(software_jobs)}\n"
               f"Engineering: {len(engineering_jobs)}\n"
               f"New Grad SWE: {len(newgrad_software_jobs)}\n"
@@ -85,7 +86,7 @@ async def fetchnewjobs(ctx):
     
     # Send initial status embed
     status_embed = discord.Embed(
-        title="🔍 Fetching New Jobs",
+        title="Fetching New Jobs",
         description="Searching for new job postings...",
         color=0xffa500
     )
@@ -117,7 +118,7 @@ async def fetchnewjobs(ctx):
                 
                 if not target_channel:
                     error_embed = discord.Embed(
-                        title="❌ Error",
+                        title="Error",
                         description="Target channel not found",
                         color=0xff0000
                     )
@@ -137,20 +138,20 @@ async def fetchnewjobs(ctx):
         # Update status embed with results
         if new_jobs:
             result_embed = discord.Embed(
-                title="✅ Jobs Fetched Successfully",
+                title="Jobs Fetched Successfully",
                 description=f"Found **{len(new_jobs)}** new job postings",
                 color=0x00ff00,
                 timestamp=datetime.now()
             )
             result_embed.add_field(
-                name="📊 Details",
+                name="Details",
                 value=f"Jobs posted to their respective channels\n"
                       f"Check the job channels for new postings",
                 inline=False
             )
         else:
             result_embed = discord.Embed(
-                title="💫 No New Jobs Found",
+                title="No New Jobs Found",
                 description="All current job postings have already been posted",
                 color=0x87ceeb
             )
@@ -160,7 +161,7 @@ async def fetchnewjobs(ctx):
         
     except Exception as e:
         error_embed = discord.Embed(
-            title="❌ Error Occurred",
+            title="Error Occurred",
             description=f"Failed to fetch jobs: {str(e)}",
             color=0xff0000
         )
@@ -177,4 +178,4 @@ def setup_commands(bot):
     ]
     for command in commands:
         bot.add_command(command)
-    print("✅ All commands registered")
+    print("All commands registered")

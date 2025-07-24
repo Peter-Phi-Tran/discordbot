@@ -1,5 +1,7 @@
 import requests
 import re
+import time
+import concurrent.futures
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 from bs4 import BeautifulSoup
@@ -301,33 +303,55 @@ class JobScraper:
 
         return recent_jobs
 
-    def fetch_all_jobs(self, days: int = 7) -> List[Dict]:
-        """Fetch jobs from all configured sources"""
+    def fetch_source_single(self, source_config: Dict, days: int) -> List[Dict]:
+        """Fetch jobs from a single source - for use in multithreading"""
+        try:
+            print(f"[Thread] Fetching jobs from {source_config['source_name']}...")
+            
+            if source_config['type'] == 'json':
+                raw_jobs = self.fetch_github_json(source_config['url'])
+            elif source_config['type'] == 'markdown_table':
+                markdown_content = self.fetch_markdown_content(source_config['url'])
+                table_format = source_config.get('table_format', 'default')
+                raw_jobs = self.parse_markdown_table(markdown_content, table_format)
+            else:
+                print(f"Unknown source type: {source_config['type']}")
+                return []
+
+            recent_jobs = self.filter_recent_jobs(raw_jobs, days)
+            mapped_jobs = [self.map_job(job, source_config['source_name']) for job in recent_jobs]
+            print(f"[Thread] Found {len(mapped_jobs)} recent jobs from {source_config['source_name']}")
+            return mapped_jobs
+
+        except Exception as e:
+            print(f"[Thread] Error fetching from {source_config['source_name']}: {str(e)}")
+            return []
+
+    def fetch_all_jobs(self, days: int = 7, max_workers: int = 5) -> List[Dict]:
+        """Fetch jobs from all configured sources using multithreading"""
         all_jobs = []
+        
+        # Create a list of tasks for the thread pool
+        tasks = [(source_config, days) for source_key, source_config in self.sources.items()]
+        
+        # Use ThreadPoolExecutor to fetch all sources concurrently
+        with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+            # Submit all tasks
+            future_to_source = {
+                executor.submit(self.fetch_source_single, source_config, days): source_config['source_name']
+                for source_config, days in tasks
+            }
+            
+            # Collect results as they complete
+            for future in concurrent.futures.as_completed(future_to_source):
+                source_name = future_to_source[future]
+                try:
+                    source_jobs = future.result()
+                    all_jobs.extend(source_jobs)
+                except Exception as e:
+                    print(f"Error in thread for {source_name}: {str(e)}")
 
-        for source_key, source_config in self.sources.items():
-            try:
-                print(f"Fetching jobs from {source_config['source_name']}...")
-
-                if source_config['type'] == 'json':
-                    raw_jobs = self.fetch_github_json(source_config['url'])
-                elif source_config['type'] == 'markdown_table':
-                    markdown_content = self.fetch_markdown_content(source_config['url'])
-                    table_format = source_config.get('table_format', 'default')
-                    raw_jobs = self.parse_markdown_table(markdown_content, table_format)
-                else:
-                    print(f"Unknown source type: {source_config['type']}")
-                    continue
-
-                recent_jobs = self.filter_recent_jobs(raw_jobs, days)
-                mapped_jobs = [self.map_job(job, source_config['source_name']) for job in recent_jobs]
-                all_jobs.extend(mapped_jobs)
-                print(f"Found {len(mapped_jobs)} recent jobs from {source_config['source_name']}")
-
-            except Exception as e:
-                print(f"Error fetching from {source_config['source_name']}: {str(e)}")
-                continue
-
+        # Deduplicate and sort
         seen_jobs = set()
         unique_jobs = []
 
@@ -337,7 +361,7 @@ class JobScraper:
                 unique_jobs.append(job)
 
         unique_jobs.sort(key=lambda x: x['date_posted'])  # Oldest first
-        # CAP TO 100
+        # CAP TO 300
         if len(unique_jobs) > 300:
             unique_jobs = unique_jobs[-300:]
 

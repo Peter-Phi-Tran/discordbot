@@ -18,3 +18,4 @@ __pycache__/
 
 setup.txt
 requirements.txt
+benchmark_scraper.py
